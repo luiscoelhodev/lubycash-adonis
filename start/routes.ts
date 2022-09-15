@@ -40,3 +40,5 @@ Route.group(() => {
     })
   })
 }).prefix('/tests')
+
+Route.resource('/users', 'UsersController').apiOnly()
