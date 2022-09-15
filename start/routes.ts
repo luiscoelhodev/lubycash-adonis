@@ -41,4 +41,8 @@ Route.group(() => {
   })
 }).prefix('/tests')
 
+Route.group(() => {
+  Route.post('/login', 'AuthController.login')
+}).prefix('/auth')
+
 Route.resource('/users', 'UsersController').apiOnly()
