@@ -19,8 +19,6 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Database from '@ioc:Adonis/Lucid/Database'
 
 Route.get('/', async () => {
   return { hello: 'world' }
@@ -30,15 +28,10 @@ Route.group(() => {
   Route.get('/hello', async () => {
     return { hello: 'world' }
   })
-
-  Route.get('/db_connection', async ({ response }: HttpContextContract) => {
-    await Database.report().then((health) => {
-      if (health.health.healthy === true) {
-        return response.ok({ message: `Awesome! Connection is healthy (:` })
-      }
-      return response.status(500).json({ message: `Connection is not healthy :(` })
-    })
-  })
+  Route.get('/db_connection', 'TestsController.checksDBConnection')
+  Route.get('/admin', 'TestsController.checksIfUserIsAdmin').middleware(['auth', 'is:admin'])
+  Route.get('/customer', 'TestsController.checksIfUserIsCustomer').middleware(['auth', 'is:customer'])
+  Route.get('/user', 'TestsController.checksIfUserIsBasic').middleware(['auth', 'is:user'])
 }).prefix('/tests')
 
 Route.group(() => {
