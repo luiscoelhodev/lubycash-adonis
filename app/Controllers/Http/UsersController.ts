@@ -1,8 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { formatZipCode } from 'App/Helpers/FormatZipCode'
 import Address from 'App/Models/Address'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
+import { UserStoreValidator, UserUpdateValidator } from 'App/Validators/UserValidator'
 
 export default class UsersController {
   public async index({ response }: HttpContextContract) {
@@ -16,8 +18,11 @@ export default class UsersController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    await request.validate(UserStoreValidator)
     const userBody = request.only(['name', 'cpf', 'phone', 'email', 'password'])
     const addressBody = request.only(['address', 'city', 'state', 'zip_code', 'complement'])
+    addressBody.state = addressBody.state.toUpperCase()
+    addressBody.zip_code = formatZipCode(addressBody.zip_code)
 
     const newUser = new User()
     const userTransaction = await Database.transaction()
@@ -74,8 +79,12 @@ export default class UsersController {
   }
 
   public async userUpdate({ auth, request, response }: HttpContextContract) {
+    await request.validate(UserUpdateValidator)
     const userBody = request.only(['name', 'cpf', 'phone', 'email', 'password'])
     const addressBody = request.only(['address', 'city', 'state', 'zip_code', 'complement'])
+    if (addressBody.state) addressBody.state = addressBody.state.toUpperCase()
+    if (addressBody.zip_code) addressBody.zip_code = formatZipCode(addressBody.zip_code)
+
     let userToBeUpdated: User
     const userUpdateTransaction = await Database.transaction()
 
@@ -116,9 +125,13 @@ export default class UsersController {
   }
 
   public async adminUpdate({ params, request, response }: HttpContextContract) {
+    await request.validate(UserUpdateValidator)
     const userSecureId = params.id
     const userBody = request.only(['name', 'cpf', 'phone', 'email', 'password'])
     const addressBody = request.only(['address', 'city', 'state', 'zip_code', 'complement'])
+    if (addressBody.state) addressBody.state = addressBody.state.toUpperCase()
+    if (addressBody.zip_code) addressBody.zip_code = formatZipCode(addressBody.zip_code)
+
     let userToBeUpdated: User
     const userUpdateTransaction = await Database.transaction()
 
