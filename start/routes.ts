@@ -38,4 +38,14 @@ Route.group(() => {
   Route.post('/login', 'AuthController.login')
 }).prefix('/auth')
 
-Route.resource('/users', 'UsersController').apiOnly()
+Route.group(() => {
+  Route.post('/new', 'UsersController.store')
+  Route.get('/my-account', 'UsersController.retrievesUsersInfo').middleware('auth')
+  Route.put('/user-update', 'UsersController.userUpdate').middleware('auth')
+  Route.delete('/user-delete', 'UsersController.userDestroy').middleware('auth')
+
+  Route.get('/all', 'UsersController.index').middleware(['auth', 'is:admin'])
+  Route.get('/:id', 'UsersController.show').middleware(['auth', 'is:admin'])
+  Route.put('/admin-update/:id', 'UsersController.adminUpdate').middleware(['auth', 'is:admin'])
+  Route.delete('/admin-delete/:id', 'UsersController.adminDestroy').middleware(['auth', 'is:admin'])
+}).prefix('/users')
