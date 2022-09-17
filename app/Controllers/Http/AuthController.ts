@@ -3,6 +3,7 @@ import User from 'App/Models/User'
 import Env from '@ioc:Adonis/Core/Env'
 import { LoginValidator } from 'App/Validators/AuthValidator'
 import Role from 'App/Models/Role'
+import { lubycashProducer } from 'App/Kafka/kafkaProducer'
 
 export default class AuthController {
   public async login({ auth, request, response }: HttpContextContract) {
@@ -19,7 +20,6 @@ export default class AuthController {
       return response.unauthorized({ message: 'Invalid credentials', error })
     }
   }
-
   public async addAdminPermissionToUser({ params, response }: HttpContextContract) {
     const userSecureId = params.id
     let userFound: User
@@ -143,5 +143,10 @@ export default class AuthController {
     } catch (error) {
       return response.notFound({ message: `Couldn't find user after removing user role. `, error: error.message})
     }
+  }
+  public async generateNewPassTokenAndSendItWithProducer({ response }: HttpContextContract) {
+    await lubycashProducer('Consumer, do you copy?')
+    console.log('teoricamente a mensagem foi enviada...')
+    return response.ok({ message: 'Message sent successfully'})
   }
 }
