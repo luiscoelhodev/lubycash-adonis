@@ -49,3 +49,10 @@ Route.group(() => {
   Route.put('/admin-update/:id', 'UsersController.adminUpdate').middleware(['auth', 'is:admin'])
   Route.delete('/admin-delete/:id', 'UsersController.adminDestroy').middleware(['auth', 'is:admin'])
 }).prefix('/users')
+
+Route.group(() => {
+  Route.post('/admin/add/:id', 'AuthController.addAdminPermissionToUser')
+  Route.post('/admin/remove/:id', 'AuthController.removeAdminPermissionFromUser')
+  Route.post('/user/add/:id', 'AuthController.addBasicUserPermissionToUser')
+  Route.post('/user/remove/:id', 'AuthController.removeBasicUserPermissionFromUser')
+}).prefix('/permission').middleware(['auth', 'is:admin'])
