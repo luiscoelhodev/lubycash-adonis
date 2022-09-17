@@ -36,6 +36,8 @@ Route.group(() => {
 
 Route.group(() => {
   Route.post('/login', 'AuthController.login')
+  Route.post('/new-password', 'AuthController.generateNewPassTokenAndSendItWithProducer')
+  Route.post('/reset-password', 'AuthController.resetPassword')
 }).prefix('/auth')
 
 Route.group(() => {
