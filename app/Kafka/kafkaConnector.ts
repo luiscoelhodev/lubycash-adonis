@@ -1,8 +1,9 @@
 import { Kafka } from 'kafkajs'
+const myBroker = process.env.KAFKA_BROKER_IP || 'localhost:9092'
 
 const kafka = new Kafka({
   clientId: 'lubycash-adonis',
-  brokers: ['localhost:9092'],
+  brokers: [myBroker],
 })
 
 enum TopicEnum {
