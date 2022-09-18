@@ -1,11 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from 'App/Models/User'
 import Env from '@ioc:Adonis/Core/Env'
-import { GetResetPassTokenValidator, LoginValidator } from 'App/Validators/AuthValidator'
+import { GetResetPassTokenValidator, LoginValidator, ResetPasswordValidator } from 'App/Validators/AuthValidator'
 import Role from 'App/Models/Role'
 import { lubycashProducer } from 'App/Kafka/kafkaProducer'
 import ResetPassToken from 'App/Models/ResetPassToken'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { DateTime } from 'luxon'
 
 export default class AuthController {
   public async login({ auth, request, response }: HttpContextContract) {
@@ -191,5 +192,48 @@ export default class AuthController {
     }
 
     return response.ok({ message: 'Your token was sent to your email!' })
+  }
+  public async resetPassword({ request, response }: HttpContextContract) {
+    const { token, newPassword } = await request.validate(ResetPasswordValidator)
+    const nowMinus30Mins = DateTime.now()
+      .setZone('America/Sao_Paulo')
+      .setLocale('pt-br')
+      .minus({ minutes: 30 })
+      .toSQL()
+
+    let tokenFound: ResetPassToken
+    try {
+      tokenFound = await ResetPassToken.findByOrFail('token', token)
+    } catch (error) {
+      return response.badRequest({ message: 'Error in finding this token.', error: error.message })
+    }
+
+    if (tokenFound.createdAt.toSQL() <= nowMinus30Mins) {
+      return response.badRequest({ error: `Your token has already expired!` })
+    }
+
+    if (!!tokenFound.used === true) {
+      return response.forbidden({ error: `This token has already been used!` })
+    }
+    
+    let userFound = await User.findByOrFail('email', tokenFound.email)
+    const resetPassTransaction = await Database.transaction()
+
+    try {
+      userFound.useTransaction(resetPassTransaction)
+      tokenFound.useTransaction(resetPassTransaction)
+
+      userFound.password = newPassword
+      tokenFound.used = true
+
+      await userFound.save()
+      await tokenFound.save()
+    } catch (error) {
+      await resetPassTransaction.rollback()
+      return response.badRequest({ message: `Error in reseting password.`, error: error.message })
+    }
+
+    await resetPassTransaction.commit()
+    return response.ok({ message: `Your password was reset! Please, log in.` })
   }
 }
