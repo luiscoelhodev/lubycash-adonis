@@ -1,9 +1,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from 'App/Models/User'
 import Env from '@ioc:Adonis/Core/Env'
-import { LoginValidator } from 'App/Validators/AuthValidator'
+import { GetResetPassTokenValidator, LoginValidator } from 'App/Validators/AuthValidator'
 import Role from 'App/Models/Role'
 import { lubycashProducer } from 'App/Kafka/kafkaProducer'
+import ResetPassToken from 'App/Models/ResetPassToken'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class AuthController {
   public async login({ auth, request, response }: HttpContextContract) {
@@ -144,9 +146,50 @@ export default class AuthController {
       return response.notFound({ message: `Couldn't find user after removing user role. `, error: error.message})
     }
   }
-  public async generateNewPassTokenAndSendItWithProducer({ response }: HttpContextContract) {
-    await lubycashProducer('Consumer, do you copy?')
-    console.log('teoricamente a mensagem foi enviada...')
-    return response.ok({ message: 'Message sent successfully'})
+  public async generateNewPassTokenAndSendItWithProducer({ request, response }: HttpContextContract) {
+    const { email } = await request.validate(GetResetPassTokenValidator)
+
+    const newToken = new ResetPassToken()
+    const tokenTransaction = await Database.transaction()
+    let userFound: User
+
+    try {
+      userFound = await User.findByOrFail('email', email)
+    } catch (error) {
+      return response.badRequest({
+        message: 'Error in finding an user with this email.',
+        error: error.message,
+      })
+    }
+
+    try {
+      newToken.fill({ email })
+      newToken.useTransaction(tokenTransaction)
+      await newToken.save()
+    } catch (error) {
+      await tokenTransaction.rollback()
+      return response.badRequest({ message: 'Error in generating token.', error: error.message })
+    }
+
+    await tokenTransaction.commit()
+
+    let tokenFound: ResetPassToken
+
+    try {
+      tokenFound = await ResetPassToken.query()
+        .where('email', newToken.email)
+        .orderBy('id', 'desc')
+        .firstOrFail()
+    } catch (error) {
+      return response.badRequest({ message: 'Error in finding new token.', error: error.message })
+    }
+
+    try {
+      await lubycashProducer({ user: userFound, token: tokenFound.token })
+    } catch (error) {
+      return response.badRequest({ message: `Error in sending token to user's email address.`, error: error.message })
+    }
+
+    return response.ok({ message: 'Your token was sent to your email!' })
   }
 }

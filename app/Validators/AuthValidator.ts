@@ -14,4 +14,14 @@ class LoginValidator extends CustomMessages {
   })
 }
 
-export { LoginValidator }
+class GetResetPassTokenValidator extends CustomMessages {
+  constructor(protected ctx: HttpContextContract) {
+    super()
+  }
+
+  public schema = schema.create({
+    email: schema.string({ trim: true }, [rules.maxLength(50), rules.minLength(8), rules.email()]),
+  })
+}
+
+export { LoginValidator, GetResetPassTokenValidator }
