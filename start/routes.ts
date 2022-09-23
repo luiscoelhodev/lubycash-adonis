@@ -50,6 +50,8 @@ Route.group(() => {
   Route.get('/:id', 'UsersController.show').middleware(['auth', 'is:admin'])
   Route.put('/admin-update/:id', 'UsersController.adminUpdate').middleware(['auth', 'is:admin'])
   Route.delete('/admin-delete/:id', 'UsersController.adminDestroy').middleware(['auth', 'is:admin'])
+
+  Route.post('/become-a-customer', 'UsersController.sendUserRequestToBecomeACustomer').middleware(['auth', 'is:user'])
 }).prefix('/users')
 
 Route.group(() => {

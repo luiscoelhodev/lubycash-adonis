@@ -5,6 +5,7 @@ import Address from 'App/Models/Address'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
 import { UserStoreValidator, UserUpdateValidator } from 'App/Validators/UserValidator'
+import axios, { AxiosResponse } from 'axios'
 
 export default class UsersController {
   public async index({ response }: HttpContextContract) {
@@ -208,5 +209,39 @@ export default class UsersController {
     }
     
     return response.ok({ userFound })
+  }
+
+  public async sendUserRequestToBecomeACustomer({ auth, request, response }: HttpContextContract) {
+    const { average_salary } = request.all()
+    const dataToBeSentInAxiosRequestBody = { average_salary: average_salary, cpf_number: auth.user!.cpf }
+    let axiosRequestToMsBanking: AxiosResponse
+
+    try {
+      axiosRequestToMsBanking = await axios({
+        method: 'post',
+        url: 'http://localhost:3000/customers/become-a-customer',
+        data: dataToBeSentInAxiosRequestBody })
+    } catch (error) {
+      if (error.message.endsWith('406')) {
+        return response.badRequest({ message: `You can't send more than one request to become a customer!` })
+      }
+      return response.badRequest({ message: 'Error in axios request to ms-banking', error: error })
+    }
+
+    switch (axiosRequestToMsBanking.data.customerFound.status) {
+      case 'Accepted': 
+        try {
+          const customerRole = await Role.findOrFail(2)
+          if (customerRole) {
+            const userToBecomeCustomer = await User.findOrFail(auth.user!.id)
+            await userToBecomeCustomer.related('roles').sync([customerRole.id], true)
+          }
+          return response.ok({ message: 'User is now a customer! (:' })
+        } catch (error) {
+          return response.badRequest({ message: `Error in updating user's role.`, error: error.message })
+        }
+      case 'Rejected':
+        return response.badRequest({ message: `You couldn't be accepted as a customer.` })
+    }
   }
 }

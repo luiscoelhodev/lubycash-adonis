@@ -40,6 +40,7 @@
     "@adonisjs/assembler": "^5.8.1",
     "@japa/preset-adonis": "^1.2.0",
     "@japa/runner": "^2.2.1",
+    "@types/axios": "^0.14.0",
     "adonis-preset-ts": "^2.1.0",
     "eslint": "^8.23.1",
     "eslint-config-prettier": "^8.5.0",
