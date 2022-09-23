@@ -4,7 +4,7 @@ import { formatZipCode } from 'App/Helpers/FormatZipCode'
 import Address from 'App/Models/Address'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
-import { UserStoreValidator, UserUpdateValidator } from 'App/Validators/UserValidator'
+import { UserStoreValidator, UserUpdateValidator, UserToBecomeCustomerValidator } from 'App/Validators/UserValidator'
 import axios, { AxiosResponse } from 'axios'
 
 export default class UsersController {
@@ -212,7 +212,7 @@ export default class UsersController {
   }
 
   public async sendUserRequestToBecomeACustomer({ auth, request, response }: HttpContextContract) {
-    const { average_salary } = request.all()
+    const { average_salary } = await request.validate(UserToBecomeCustomerValidator)
     const dataToBeSentInAxiosRequestBody = { average_salary: average_salary, cpf_number: auth.user!.cpf }
     let axiosRequestToMsBanking: AxiosResponse
 

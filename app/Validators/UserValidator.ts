@@ -85,4 +85,13 @@ class UserUpdateValidator extends CustomMessages {
   })
 }
 
-export { UserStoreValidator, UserUpdateValidator }
+class UserToBecomeCustomerValidator extends CustomMessages {
+  constructor(protected ctx: HttpContextContract) {
+    super()
+  }
+  public schema = schema.create({
+    average_salary: schema.number()
+  })
+}
+
+export { UserStoreValidator, UserUpdateValidator, UserToBecomeCustomerValidator }
