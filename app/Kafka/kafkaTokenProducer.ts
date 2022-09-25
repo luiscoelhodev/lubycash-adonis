@@ -1,7 +1,7 @@
 import { kafka, TopicEnum } from "./kafkaConnector"
-import { MessageFromAdonisProducer } from "./kafkaTypes"
+import { TokenMessageFromAdonisProducer } from "./kafkaTypes"
 
-export async function lubycashProducer(producerObject: MessageFromAdonisProducer) {
+export async function tokenProducer(producerObject: TokenMessageFromAdonisProducer) {
   const producer = kafka.producer()
   await producer.connect()
   await producer.send({

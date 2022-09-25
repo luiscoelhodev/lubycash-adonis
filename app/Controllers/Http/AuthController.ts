@@ -3,7 +3,7 @@ import User from 'App/Models/User'
 import Env from '@ioc:Adonis/Core/Env'
 import { GetResetPassTokenValidator, LoginValidator, ResetPasswordValidator } from 'App/Validators/AuthValidator'
 import Role from 'App/Models/Role'
-import { lubycashProducer } from 'App/Kafka/kafkaProducer'
+import { tokenProducer } from 'App/Kafka/kafkaTokenProducer'
 import ResetPassToken from 'App/Models/ResetPassToken'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
@@ -186,7 +186,7 @@ export default class AuthController {
     }
 
     try {
-      await lubycashProducer({ user: userFound, token: tokenFound.token })
+      await tokenProducer({ user: userFound, token: tokenFound.token })
     } catch (error) {
       return response.badRequest({ message: `Error in sending token to user's email address.`, error: error.message })
     }

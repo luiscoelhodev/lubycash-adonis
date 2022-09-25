@@ -1,8 +1,13 @@
 import User from "App/Models/User"
 
-type MessageFromAdonisProducer = {
+type TokenMessageFromAdonisProducer = {
   user: User,
   token: string
 }
 
-export { MessageFromAdonisProducer }
+type ValidationMessageFromAdonisProducer = {
+  user: User,
+  result: string
+}
+
+export { TokenMessageFromAdonisProducer, ValidationMessageFromAdonisProducer }
