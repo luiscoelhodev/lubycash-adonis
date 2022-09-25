@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { BecomeACustomerErrorsEnum } from 'App/Helpers/ErrorsEnums'
 import { formatZipCode } from 'App/Helpers/FormatZipCode'
+import { validationProducer } from 'App/Kafka/kafkaValidationProducer'
 import Address from 'App/Models/Address'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
@@ -239,19 +240,21 @@ export default class UsersController {
       return response.badRequest({ message: 'Error in axios request to ms-banking', error: error })
     }
 
+    const userToBecomeCustomer = await User.findOrFail(auth.user!.id)
+
     switch (axiosRequestToMsBanking.data.customerFound.status) {
       case 'Accepted': 
         try {
           const customerRole = await Role.findOrFail(2)
-          if (customerRole) {
-            const userToBecomeCustomer = await User.findOrFail(auth.user!.id)
-            await userToBecomeCustomer.related('roles').sync([customerRole.id], true)
-          }
+          if (customerRole) await userToBecomeCustomer.related('roles').sync([customerRole.id], true)
+
+          await validationProducer({user: userToBecomeCustomer, result: 'Accepted'})
           return response.ok({ message: 'User is now a customer! (:' })
         } catch (error) {
           return response.badRequest({ message: `Error in updating user's role.`, error: error.message })
         }
       case 'Rejected':
+        await validationProducer({user: userToBecomeCustomer, result: 'Rejected'})
         return response.ok({ message: `You couldn't be accepted as a customer ):` })
     }
   }
