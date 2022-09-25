@@ -63,4 +63,6 @@ Route.group(() => {
 
 Route.group(() =>{
   Route.post('/all', 'CustomersController.listAllCustomers').middleware(['auth', 'is:admin'])
+  Route.post('/bank-statement/:cpf', 'CustomersController.getCustomerBankStatement').middleware(['auth', 'is:admin'])
+  Route.post('/transfer/make', 'CustomersController.makeTransfer').middleware(['auth', 'is:customer'])
 }).prefix('/customers')
