@@ -60,3 +60,7 @@ Route.group(() => {
   Route.post('/user/add/:id', 'AuthController.addBasicUserPermissionToUser')
   Route.post('/user/remove/:id', 'AuthController.removeBasicUserPermissionFromUser')
 }).prefix('/permission').middleware(['auth', 'is:admin'])
+
+Route.group(() =>{
+  Route.post('/all', 'CustomersController.listAllCustomers').middleware(['auth', 'is:admin'])
+}).prefix('/customers')
