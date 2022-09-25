@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { TransferErrors } from 'App/Helpers/ErrorsEnums'
+import { GetCustomerBankStatementErrorsEnum, ListAllCustomersErrorsEnum, TransferErrorsEnum } from 'App/Helpers/ErrorsEnums'
 import axios, { AxiosResponse } from 'axios'
 
 export default class CustomersController {
@@ -13,8 +13,16 @@ export default class CustomersController {
         url: 'http://localhost:3000/customers/all',
         data: { status, from, to }
       })
+      switch (axiosRequestToListAllCustomers.data.error) {
+        case ListAllCustomersErrorsEnum.validation:
+          return response.status(422).send({ error: ListAllCustomersErrorsEnum.validation })
+        case ListAllCustomersErrorsEnum.dbSelect:
+          return response.badRequest({ error: ListAllCustomersErrorsEnum.dbSelect })
+        default:
+          break
+      }
     } catch (error) {
-      return response.badRequest({ message: 'Error in axios request.', error: error.message })
+      return response.badRequest({ message: 'Error in axios request to ms-banking', error: error.message })
     }
     const customers = axiosRequestToListAllCustomers.data.customers
     return response.ok({ customers })
@@ -31,8 +39,18 @@ export default class CustomersController {
         url: `http://localhost:3000/customers/bank-statement/${customerCPF}`,
         data: { from, to }
       })
+      switch (axiosRequestToGetCustomerBankStatement.data.error) {
+        case GetCustomerBankStatementErrorsEnum.validation:
+          return response.status(422).send({ error: GetCustomerBankStatementErrorsEnum.validation })
+        case GetCustomerBankStatementErrorsEnum.notFound:
+          return response.notFound({ error: GetCustomerBankStatementErrorsEnum.notFound })
+        case GetCustomerBankStatementErrorsEnum.dbSelect:
+          return response.badRequest({ error: GetCustomerBankStatementErrorsEnum.dbSelect })
+        default:
+          break
+      }
     } catch (error) {
-      return response.badRequest({ message: 'Error in axios request.', error: error.message })
+      return response.badRequest({ message: 'Error in axios request to ms-banking.', error: error.message })
     }
     const transfers = axiosRequestToGetCustomerBankStatement.data.transfers
     return response.ok({ transfers }) 
@@ -52,23 +70,23 @@ export default class CustomersController {
       })
       
       switch(axiosRequestToMakeATransfer.data.error) {
-        case TransferErrors.equalCpfs:
-          return response.badRequest({ error: TransferErrors.equalCpfs })
-        case TransferErrors.validation:
-          return response.badRequest({ error: TransferErrors.validation })
-        case TransferErrors.senderNotFound:
-          return response.badRequest({ error: TransferErrors.senderNotFound })
-        case TransferErrors.receiverNotFound:
-          return response.badRequest({ error: TransferErrors.receiverNotFound })
-        case TransferErrors.notEnoughMoney:
-          return response.badRequest({ error: TransferErrors.notEnoughMoney })
-        case TransferErrors.dbInsertion:
-          return response.badRequest({ error: TransferErrors.dbInsertion })
+        case TransferErrorsEnum.equalCpfs:
+          return response.badRequest({ error: TransferErrorsEnum.equalCpfs })
+        case TransferErrorsEnum.validation:
+          return response.badRequest({ error: TransferErrorsEnum.validation })
+        case TransferErrorsEnum.senderNotFound:
+          return response.badRequest({ error: TransferErrorsEnum.senderNotFound })
+        case TransferErrorsEnum.receiverNotFound:
+          return response.badRequest({ error: TransferErrorsEnum.receiverNotFound })
+        case TransferErrorsEnum.notEnoughMoney:
+          return response.badRequest({ error: TransferErrorsEnum.notEnoughMoney })
+        case TransferErrorsEnum.dbInsertion:
+          return response.badRequest({ error: TransferErrorsEnum.dbInsertion })
         default:
           break
       }
     } catch (error) {
-      return response.badRequest({ message: 'Error in axios request.', error: error })
+      return response.badRequest({ message: 'Error in axios request to ms-banking.', error: error })
     }
     return response.ok({ message: 'Transfer completed successfully!' })
   }

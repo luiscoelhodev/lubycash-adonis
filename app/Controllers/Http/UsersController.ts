@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { BecomeACustomerErrorsEnum } from 'App/Helpers/ErrorsEnums'
 import { formatZipCode } from 'App/Helpers/FormatZipCode'
 import Address from 'App/Models/Address'
 import Role from 'App/Models/Role'
@@ -221,10 +222,20 @@ export default class UsersController {
         method: 'post',
         url: 'http://localhost:3000/customers/become-a-customer',
         data: dataToBeSentInAxiosRequestBody })
-    } catch (error) {
-      if (error.message.endsWith('406')) {
-        return response.badRequest({ message: `You can't send more than one request to become a customer!` })
+      
+      switch(axiosRequestToMsBanking.data.error) {
+        case BecomeACustomerErrorsEnum.validation:
+          return response.badRequest({ error: BecomeACustomerErrorsEnum.validation })
+        case BecomeACustomerErrorsEnum.hasAlreadyRequested:
+          return response.badRequest({ error: BecomeACustomerErrorsEnum.hasAlreadyRequested })
+        case BecomeACustomerErrorsEnum.dbInsertionError:
+          return response.badRequest({ error: BecomeACustomerErrorsEnum.dbInsertionError })
+        case BecomeACustomerErrorsEnum.dbSelectError:
+          return response.badRequest({ error: BecomeACustomerErrorsEnum.dbSelectError })
+        default:
+          break
       }
+    } catch (error) {
       return response.badRequest({ message: 'Error in axios request to ms-banking', error: error })
     }
 
@@ -241,7 +252,7 @@ export default class UsersController {
           return response.badRequest({ message: `Error in updating user's role.`, error: error.message })
         }
       case 'Rejected':
-        return response.badRequest({ message: `You couldn't be accepted as a customer.` })
+        return response.ok({ message: `You couldn't be accepted as a customer ):` })
     }
   }
 }
