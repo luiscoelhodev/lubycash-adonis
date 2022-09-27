@@ -16,6 +16,7 @@ services:
       MYSQL_USER: 'root'
       MYSQL_PASSWORD: 'root'
       MYSQL_DB_NAME: 'lubycash_db'
+      MS_BANKING_URL: 'http://ms-banking-lubycash:3000'
     volumes:
       - lubycash-adonis:/usr/app
     networks:

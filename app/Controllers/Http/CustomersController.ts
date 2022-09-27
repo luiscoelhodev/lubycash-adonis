@@ -10,7 +10,7 @@ export default class CustomersController {
     try {
       axiosRequestToListAllCustomers = await axios({
         method: 'GET',
-        url: 'http://localhost:3000/customers/all',
+        url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/customers/all`,
         data: { status, from, to }
       })
       switch (axiosRequestToListAllCustomers.data.error) {
@@ -36,7 +36,7 @@ export default class CustomersController {
     try {
       axiosRequestToGetCustomerBankStatement = await axios({
         method: 'GET',
-        url: `http://localhost:3000/customers/bank-statement/${customerCPF}`,
+        url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/customers/bank-statement/${customerCPF}`,
         data: { from, to }
       })
       switch (axiosRequestToGetCustomerBankStatement.data.error) {
@@ -65,7 +65,7 @@ export default class CustomersController {
     try {
       axiosRequestToMakeATransfer = await axios({
         method: 'POST',
-        url: 'http://localhost:3000/transfers/make',
+        url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/transfers/make`,
         data: { amount, message, receiverCPF, senderCPF }
       })
       

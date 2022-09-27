@@ -221,8 +221,8 @@ export default class UsersController {
     try {
       axiosRequestToMsBanking = await axios({
         method: 'post',
-        url: 'http://localhost:3000/customers/become-a-customer',
-        data: dataToBeSentInAxiosRequestBody })
+        url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/customers/become-a-customer`,
+        data: dataToBeSentInAxiosRequestBody},)
       
       switch(axiosRequestToMsBanking.data.error) {
         case BecomeACustomerErrorsEnum.validation:
