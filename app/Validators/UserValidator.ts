@@ -94,4 +94,25 @@ class UserToBecomeCustomerValidator extends CustomMessages {
   })
 }
 
-export { UserStoreValidator, UserUpdateValidator, UserToBecomeCustomerValidator }
+class GetUserBankStatementValidator extends CustomMessages {
+  constructor(protected ctx: HttpContextContract) {
+    super()
+  }
+  public schema = schema.create({
+    from: schema.date.optional(),
+    to: schema.date.optional()
+  })
+}
+
+class MakeTransferValidator extends CustomMessages {
+  constructor(protected ctx: HttpContextContract) {
+    super()
+  }
+  public schema = schema.create({
+    amount: schema.number([rules.unsigned(), rules.range(0.01, 100000)]),
+    message: schema.string.optional({trim: true}),
+    receiverCPF: schema.string({trim: true}, [rules.regex(/^\d{3}\.\d{3}\.\d{3}\-\d{2}$/)])
+  })
+}
+
+export { UserStoreValidator, UserUpdateValidator, UserToBecomeCustomerValidator, GetUserBankStatementValidator, MakeTransferValidator }

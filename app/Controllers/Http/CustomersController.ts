@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { GetCustomerBankStatementErrorsEnum, ListAllCustomersErrorsEnum, TransferErrorsEnum } from 'App/Helpers/ErrorsEnums'
+import { GetCustomerBankStatementErrorsEnum, TransferErrorsEnum } from 'App/Helpers/ErrorsEnums'
 import User from 'App/Models/User'
+import { MakeTransferValidator } from 'App/Validators/UserValidator'
 import axios, { AxiosResponse } from 'axios'
 
 export default class CustomersController {
@@ -26,14 +27,26 @@ export default class CustomersController {
 
   public async getCustomerBankStatement({ params, request, response }: HttpContextContract) {
     const customerCPF = params.cpf
-    const { from, to } = request.all()
+    const { from, to } = request.qs()
+    if (from && to) {
+      if (from.match(/^(\d{4})-(\d{2})-(\d{2})$/) === null) {
+        return response.status(422).send({ error: 'Validation error: invalid date format (from). Date format should be: YYYY-MM-DD'})
+      }
+      if (to.match(/^(\d{4})-(\d{2})-(\d{2})$/) === null) {
+        return response.status(422).send({ error: 'Validation error: invalid date format (to). Date format should be: YYYY-MM-DD'})
+      }
+    }
+
+    if (from && !to || !from && to) {
+      return response.status(422).send({error: 'Validation error: when filtering by date, make sure to provide BOTH from AND to dates!'})
+    }
 
     let axiosRequestToGetCustomerBankStatement: AxiosResponse
     try {
       axiosRequestToGetCustomerBankStatement = await axios({
         method: 'GET',
         url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/customers/bank-statement/${customerCPF}`,
-        data: { from, to }
+        params: { from, to },
       })
       switch (axiosRequestToGetCustomerBankStatement.data.error) {
         case GetCustomerBankStatementErrorsEnum.validation:
@@ -53,7 +66,7 @@ export default class CustomersController {
   }
 
   public async makeTransfer({ auth, request, response }: HttpContextContract) {
-    const { amount, message, receiverCPF } = request.all()
+    const { amount, message, receiverCPF } = await request.validate(MakeTransferValidator)
     const senderCPF = auth.user!.cpf
 
     let axiosRequestToMakeATransfer: AxiosResponse
