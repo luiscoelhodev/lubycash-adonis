@@ -1,31 +1,27 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { GetCustomerBankStatementErrorsEnum, ListAllCustomersErrorsEnum, TransferErrorsEnum } from 'App/Helpers/ErrorsEnums'
+import User from 'App/Models/User'
 import axios, { AxiosResponse } from 'axios'
 
 export default class CustomersController {
-  public async listAllCustomers({ request, response }: HttpContextContract) {
-    const { status, from, to } = request.all()
-
-    let axiosRequestToListAllCustomers: AxiosResponse
+  public async listAllCustomers({ response }: HttpContextContract) {
+    let allUsers: User[]
     try {
-      axiosRequestToListAllCustomers = await axios({
-        method: 'GET',
-        url: `${process.env.MS_BANKING_URL || 'http://localhost:3000'}/customers/all`,
-        data: { status, from, to }
-      })
-      switch (axiosRequestToListAllCustomers.data.error) {
-        case ListAllCustomersErrorsEnum.validation:
-          return response.status(422).send({ error: ListAllCustomersErrorsEnum.validation })
-        case ListAllCustomersErrorsEnum.dbSelect:
-          return response.badRequest({ error: ListAllCustomersErrorsEnum.dbSelect })
-        default:
-          break
-      }
+      allUsers = await User.query().preload('roles')
     } catch (error) {
-      return response.badRequest({ message: 'Error in axios request to ms-banking', error: error.message })
+      return response.badRequest({ message: 'Error in retrieving users from DB.', error: error.message })
     }
-    const customers = axiosRequestToListAllCustomers.data.customers
-    return response.ok({ customers })
+    const users: any = []
+    
+    allUsers.forEach((user) => {
+      user.roles.forEach((role) => {
+        if (role.type === 'customer' && user.name !== 'Customer') {
+          const { id, secureId, name, cpf, phone, email, createdAt, updatedAt } = user
+          users.push({ id, secureId, name, cpf, phone, email, createdAt, updatedAt })
+        }
+      })
+    })
+    return response.ok({ users })
   }
 
   public async getCustomerBankStatement({ params, request, response }: HttpContextContract) {
