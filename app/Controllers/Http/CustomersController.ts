@@ -3,16 +3,20 @@ import { GetCustomerBankStatementErrorsEnum, TransferErrorsEnum } from 'App/Help
 import User from 'App/Models/User'
 import { MakeTransferValidator } from 'App/Validators/UserValidator'
 import axios, { AxiosResponse } from 'axios'
+import { DateTime } from 'luxon'
 
 export default class CustomersController {
-  public async listAllCustomers({ response }: HttpContextContract) {
+  public async listAllCustomers({ request, response }: HttpContextContract) {
+    const { from, to } = request.qs()
+    const fromDateTime = DateTime.fromSQL(from).toJSDate()
+    const toDateTime = DateTime.fromSQL(to).toJSDate()
     let allUsers: User[]
     try {
       allUsers = await User.query().preload('roles')
     } catch (error) {
       return response.badRequest({ message: 'Error in retrieving users from DB.', error: error.message })
     }
-    const users: any = []
+    let users: any[] = []
     
     allUsers.forEach((user) => {
       user.roles.forEach((role) => {
@@ -22,6 +26,23 @@ export default class CustomersController {
         }
       })
     })
+
+    if (from && to) {
+      if (from.match(/^(\d{4})-(\d{2})-(\d{2})$/) === null) {
+        return response.status(422).send({ error: 'Validation error: invalid date format (from). Date format should be: YYYY-MM-DD'})
+      }
+      if (to.match(/^(\d{4})-(\d{2})-(\d{2})$/) === null) {
+        return response.status(422).send({ error: 'Validation error: invalid date format (to). Date format should be: YYYY-MM-DD'})
+      }
+      users = users.filter((user) => {
+        return user.createdAt >= fromDateTime && user.createdAt <= toDateTime
+      })
+    }
+    
+    if (from && !to || !from && to) {
+      return response.status(422).send({error: 'Validation error: when filtering by date, make sure to provide BOTH from AND to dates!'})
+    }
+
     return response.ok({ users })
   }
 
